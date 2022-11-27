@@ -9,21 +9,24 @@ import {
 } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { Message } from './entities/message.entity';
+import { MessageDto } from './modules/message/dto/message.dto';
+import { MessageService } from './modules/message/message.service';
 
 @WebSocketGateway({
   cors: {
-    origin: [process.env.FRONTEND_URL],
-    methods: ['GET', 'POST'],
-    credentials: true,
+    origin: '*',
   },
 })
 export class AppGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
+  constructor(private messageService: MessageService) {}
+
   private logger: Logger = new Logger('AppGateway');
 
   @SubscribeMessage('sendMessage')
-  async handleSendMessage(client: Socket, payload: Message): Promise<void> {
+  async handleSendMessage(client: Socket, payload: MessageDto): Promise<void> {
+    await this.messageService.createMessage(payload);
     this.server.emit('recMessage', payload);
   }
 

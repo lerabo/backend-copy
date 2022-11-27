@@ -27,6 +27,7 @@ export class ProposalPostService {
       newMessage.id = proposalPostDto.id;
       newMessage.price = proposalPostDto.price;
       newMessage.message = proposalPostDto.message;
+      newMessage.clientId = proposalPostDto.clientId;
       newMessage.jobPost = proposalPostDto.jobPost;
       newMessage.userId = proposalPostDto.userId;
       const message = await this.proposalPostRepository.save(newMessage);

@@ -11,16 +11,21 @@ export class MessageService {
     private messageRepository: Repository<Message>,
   ) {}
 
-  async create(data: MessageDto): Promise<Message> {
-    const message = await this.messageRepository.save({
-      text: data.text,
-      chatRoom: { id: data.chatRoomId },
-      user: { id: data.userId },
-    });
-    return message;
+  async createMessage(data: MessageDto): Promise<Message> {
+    try {
+      const message = await this.messageRepository.save({
+        text: data.text,
+        chatRoom: { id: data.chatRoomId },
+        user: { id: data.userId },
+        jobLink: data.jobLink,
+      });
+      return message;
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  async getAllById(id: number): Promise<Message[]> {
+  async getAllByRoomId(id: number): Promise<Message[]> {
     const messages = await this.messageRepository
       .createQueryBuilder('message')
       .leftJoin('message.chatRoom', 'chat_room', 'message.chatRoomId = chat_room.Id')

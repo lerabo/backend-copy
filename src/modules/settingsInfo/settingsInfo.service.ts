@@ -11,7 +11,7 @@ export class SettingsInfoService {
     private userRepository: Repository<User>,
   ) {}
 
-  async saveUserSettings(id: number, settingsInfoDto: SettingsInfoDto) {
+  async saveUserSettings(id: number, settingsInfoDto: SettingsInfoDto): Promise<User> {
     const currentUserSettings = await this.userRepository.findOneBy({ id: id });
     if (!currentUserSettings) {
       throw new HttpException(
@@ -25,7 +25,6 @@ export class SettingsInfoService {
     currentUserSettings.firstName = settingsInfoDto.firstName;
     currentUserSettings.lastName = settingsInfoDto.lastName;
     currentUserSettings.phone = settingsInfoDto.phone;
-    currentUserSettings.userId = id;
     const profile = await this.userRepository.save(currentUserSettings);
     console.log(profile);
     return profile;

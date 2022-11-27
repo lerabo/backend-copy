@@ -28,7 +28,7 @@ export class AuthService {
   ) {}
 
   async signUp(@Body() AuthDto: AuthDto): Promise<User> {
-    const { password, email, role } = AuthDto;
+    const { password, email } = AuthDto;
     const isUsed = await this.usersRepository.findOneBy({ email });
     console.log(isUsed, 'isUsed');
     if (isUsed) {
@@ -41,13 +41,14 @@ export class AuthService {
       );
     }
     const hashedPassword = await bcrypt.hash(password, SALT_NUMBER);
-    return await this.usersRepository.save({ email, password: hashedPassword, googleId: '', role });
+    return await this.usersRepository.save({ email, password: hashedPassword, googleId: '' });
   }
 
   async update(@Body() authDto: Partial<UpdateDto>): Promise<User> {
-    const { email, role } = authDto;
+    const { email, role, userId } = authDto;
     const user = await this.usersRepository.findOneBy({ email });
     user.role = role;
+    user.userId = userId;
     return await this.usersRepository.save(user);
   }
 
@@ -85,7 +86,7 @@ export class AuthService {
 
   async googleSignUp(req) {
     const { googleId, email } = req.user;
-    const user = await this.usersRepository.findOneBy({ googleId });
+    const user = await this.usersRepository.findOneBy({ email });
     if (user) return this.googleSignIn(user);
     const newUser = await this.usersRepository.save({ email, googleId, password: '' });
     return this.googleSignIn(newUser);
@@ -129,7 +130,10 @@ export class AuthService {
         to: email,
         from: 'silvagabis162@gmail.com',
         subject: 'Devs Heads restore password',
-        html: `<h1>Change password</h1><p>If you want to reset your password click:</p><a href="${url}">${url}</a>`,
+        html: `<h1>Restore password</h1><p>Hello!<p/><br>
+        <p>If you want to reset your password click on the link below and 
+        you will be redirect to restore password page</p><br>
+        <a href="${url}">${url}</a>`,
       };
 
       sgMail
@@ -196,7 +200,11 @@ export class AuthService {
     await this.usersRepository.update({ id: user.id }, { password: password });
   }
   async getUser() {
-    const user = await this.usersRepository.find();
+    const user = await this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.clientSetting', 'clientInfo')
+      .leftJoinAndSelect('user.profileSetting', 'profile')
+      .getMany();
     return user;
   }
 }

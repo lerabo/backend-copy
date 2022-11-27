@@ -51,6 +51,7 @@ export class ClientSettingsService {
       const newClientInfo = new ClientSettingsEntity();
       newClientInfo.name = clientInfoDto.name;
       newClientInfo.country = clientInfoDto.country;
+      newClientInfo.photo = clientInfoDto.photo;
       newClientInfo.website = clientInfoDto.website;
       newClientInfo.industry = clientInfoDto.industry;
       newClientInfo.quantity = clientInfoDto.quantity;

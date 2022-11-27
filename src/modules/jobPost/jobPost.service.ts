@@ -62,7 +62,6 @@ export class JobPostService {
 
   async saveJobPost(jobPostDto: JobPostDto) {
     try {
-      console.log(jobPostDto);
       const newJob = new JobPostEntity();
       newJob.jobTitle = jobPostDto.jobTitle;
       newJob.jobCategory = jobPostDto.jobCategory;
@@ -74,7 +73,6 @@ export class JobPostService {
       newJob.dateTime = jobPostDto.dateTime;
       newJob.userId = jobPostDto.userId;
       const job = await this.jobPostRepository.save(newJob);
-      console.log(job);
       return job;
     } catch (error) {
       console.log(error);

@@ -1,4 +1,4 @@
-import { ConsoleLogger, Injectable, NotFoundException } from '@nestjs/common';
+import { ConsoleLogger, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
 import { CategoryEntity } from 'src/entities/category.entity';
@@ -7,6 +7,8 @@ import { SkillsEntity } from 'src/entities/skills.entity';
 import { ProfileDto } from './dto/profile.dto';
 import { FindUserDto } from './profile-filter.dto';
 import { User } from 'src/entities/user.entity';
+import { SavedProfileDto } from './dto/status.dto';
+import { SaveFreelancerEntity } from 'src/entities/profile/favourite.entity';
 
 @Injectable()
 export class ProfileService {
@@ -19,6 +21,8 @@ export class ProfileService {
     private skillsRepository: Repository<SkillsEntity>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(SaveFreelancerEntity)
+    private saveProfileFreelancerRepository: Repository<SaveFreelancerEntity>,
   ) {}
 
   async getAllCategories(): Promise<CategoryEntity[]> {
@@ -35,36 +39,69 @@ export class ProfileService {
     return allProfile;
   }
 
-  async updateSingleProfile(id: number, save: { saved: boolean }) {
-    const { saved } = save;
-    if (id && save) {
-      await this.profileRepository.update({ id: id }, { saved: saved });
+  async updateSingleProfile(id: number, save: SavedProfileDto): Promise<SaveFreelancerEntity[] | SavedProfileDto> {
+    const { saved, clientId } = save;
+    const profile = await this.saveProfileFreelancerRepository
+      .createQueryBuilder('freelancer')
+      .leftJoin('freelancer.freelancerId', 'profile')
+      .where('freelancer.clientId = :id', { id: clientId })
+      .andHaving('freelancer.freelancerId = :userId', { userId: id })
+      .getOne();
+
+    if (profile) {
+      await this.saveProfileFreelancerRepository.update({ freelancerId: id, clientId: clientId }, { saved: saved });
       return save;
+    } else {
+      const status = new SaveFreelancerEntity();
+      status.freelancerId = id;
+      status.clientId = clientId;
+      status.saved = saved;
+      await this.saveProfileFreelancerRepository.save(status);
+      return status;
+    }
+  }
+
+  async getProfileSettings(
+    id: number,
+    clientId: number,
+  ): Promise<{ profile: ProfileEntity; setting: User; status: SaveFreelancerEntity }> {
+    const profile = await this.profileRepository.findOne({
+      where: {
+        id: id,
+      },
+      relations: ['experience', 'education', 'skills', 'category'],
+    });
+    if (profile) {
+      const setting = await this.userRepository
+        .createQueryBuilder('setting')
+        .leftJoin(`setting.userId`, 'profile')
+        .where('setting.userId = :userId', { userId: profile?.userId })
+        .getOne();
+      const status = await this.saveProfileFreelancerRepository
+        .createQueryBuilder('freelancersaved')
+        .leftJoin(`freelancersaved.freelancerId`, 'profile')
+        .where('freelancersaved.freelancerId = :id', { id: id })
+        .andHaving('freelancersaved.clientId = :clientId', { clientId: clientId })
+        .getOne();
+      return {
+        profile,
+        setting,
+        status,
+      };
     }
     throw new NotFoundException(id);
   }
-
-  async getProfileSettings(id: number) {
+  async getFreelancerInfo(id: number) {
     const profile = await this.profileRepository.findOne({
       where: {
         userId: id,
       },
       relations: ['experience', 'education', 'skills', 'category'],
     });
-    if (profile) {
-      const setting = await this.userRepository
-        .createQueryBuilder('Setting')
-        .leftJoin(`Setting.userId`, 'profile')
-        .where('Setting.userId = :userId', { userId: profile?.userId })
-        .getOne();
-      return {
-        profile,
-        setting,
-      };
-    }
-    throw new NotFoundException(id);
+    return profile;
   }
-  async getProfile(alias: string) {
+
+  async getProfile(alias: string): Promise<SelectQueryBuilder<ProfileEntity>> {
     return this.profileRepository
       .createQueryBuilder(alias)
       .innerJoinAndSelect(`${alias}.skills`, 'skills')
@@ -74,14 +111,20 @@ export class ProfileService {
       .innerJoinAndSelect(`${alias}.userId`, 'user')
       .where(`${alias}.userId = :userId`, { userId: 'user.userId' });
   }
-  async queryBuilderSkills(alias: string) {
+  async querySavedTalent(alias: string, clientId: number): Promise<SelectQueryBuilder<ProfileEntity>> {
+    return (await this.getProfile(alias))
+      .leftJoinAndSelect(`${alias}.profile`, 'favourite')
+      .where(`favourite.saved = :saved`, { saved: true })
+      .andHaving(`favourite.clientId = :clientId`, { clientId: clientId });
+  }
+  async queryBuilderSkills(alias: string): Promise<SelectQueryBuilder<ProfileEntity>> {
     return this.getProfile(alias);
   }
-  async querySavedTalent(alias: string) {
-    return (await this.getProfile(alias)).where(`${alias}.saved = :saved`, { saved: true });
-  }
 
-  async paginationFilter(query: FindUserDto, profile: SelectQueryBuilder<ProfileEntity>) {
+  async paginationFilter(
+    query: FindUserDto,
+    profile: SelectQueryBuilder<ProfileEntity>,
+  ): Promise<SelectQueryBuilder<ProfileEntity>> {
     const skillQuery = query.skills ? query.skills.split(',') : null;
     const search = `%${query.search}%`;
     const category = query.category;
@@ -100,24 +143,42 @@ export class ProfileService {
     return profile;
   }
 
-  async saveProfile(profileDto: ProfileDto) {
-    try {
-      const newProfile = new ProfileEntity();
-      newProfile.photo = profileDto.photo;
-      newProfile.position = profileDto.position;
-      newProfile.price = profileDto.price;
-      newProfile.englishLevel = profileDto.englishLevel;
-      newProfile.description = profileDto.description;
-      newProfile.category = profileDto.category;
-      newProfile.education = profileDto.education;
-      newProfile.experience = profileDto.experience;
-      newProfile.skills = profileDto.skills;
-      newProfile.userId = profileDto.userId;
-      const profile = await this.profileRepository.save(newProfile);
-      console.log(profile);
+  async saveProfile(profileDto: ProfileDto): Promise<ProfileEntity> {
+    const findedInfo = await this.profileRepository.findOne({
+      where: {
+        userId: profileDto.userId,
+      },
+    });
+    if (findedInfo) {
+      findedInfo.photo = profileDto.photo;
+      findedInfo.position = profileDto.position;
+      findedInfo.price = profileDto.price;
+      findedInfo.englishLevel = profileDto.englishLevel;
+      findedInfo.description = profileDto.description;
+      findedInfo.category = profileDto.category;
+      findedInfo.education = profileDto.education;
+      findedInfo.experience = profileDto.experience;
+      findedInfo.skills = profileDto.skills;
+      const profile = await this.profileRepository.save(findedInfo);
       return profile;
-    } catch (error) {
-      console.log(error);
+    } else {
+      try {
+        const newProfile = new ProfileEntity();
+        newProfile.photo = profileDto.photo;
+        newProfile.position = profileDto.position;
+        newProfile.price = profileDto.price;
+        newProfile.englishLevel = profileDto.englishLevel;
+        newProfile.description = profileDto.description;
+        newProfile.category = profileDto.category;
+        newProfile.education = profileDto.education;
+        newProfile.experience = profileDto.experience;
+        newProfile.skills = profileDto.skills;
+        newProfile.userId = profileDto.userId;
+        const profile = await this.profileRepository.save(newProfile);
+        return profile;
+      } catch (error) {
+        console.log(error);
+      }
     }
   }
 }
