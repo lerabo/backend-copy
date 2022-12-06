@@ -44,7 +44,7 @@ export class ProfileEntity {
   @ApiProperty({ example: 'Pre_intermediate', description: 'Profile english level' })
   @Column({
     type: 'enum',
-    enum: ['Pre_intermediate', 'Intermediate', 'Upper_intermediate'],
+    enum: ['Pre_Intermediate', 'Intermediate', 'Upper_Intermediate'],
   })
   englishLevel: string;
 

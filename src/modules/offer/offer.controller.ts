@@ -26,7 +26,7 @@ export class OfferPostController {
     @Param('id') id: number,
     @Param('freelancerId') freelancerId: number,
     @Param('clientId') clientId: number,
-  ): Promise<OfferEntity[]> {
+  ): Promise<OfferEntity> {
     return this.offerPostService.getJobOfferByProfile(Number(id), Number(freelancerId), Number(clientId));
   }
 

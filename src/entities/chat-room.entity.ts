@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { DeletingStatus, RoomStatus } from 'src/modules/chat-room/dto/chat-room.types';
+import { DeletingStatus, RoomStatus, SendedStatus } from 'src/modules/chat-room/dto/chat-room.types';
 import { Entity, PrimaryGeneratedColumn, CreateDateColumn, OneToMany, JoinColumn, ManyToOne, Column } from 'typeorm';
 import { JobPostEntity } from './jobPost.entity';
 import { Message } from './message.entity';
@@ -18,13 +18,13 @@ export class ChatRoom {
 
   @ApiProperty({ type: User })
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'senderId' })
-  senderId: User;
+  @JoinColumn({ name: 'clientId' })
+  clientId: User;
 
   @ApiProperty({ type: User })
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'receiverId' })
-  receiverId: User;
+  @JoinColumn({ name: 'freelancerId' })
+  freelancerId: User;
 
   @ApiProperty({ type: [Message] })
   @OneToMany(() => Message, (message) => message.chatRoom)
@@ -49,4 +49,11 @@ export class ChatRoom {
     default: DeletingStatus.NONE,
   })
   deletedFor: string;
+
+  @ApiProperty({ example: 'forFreelancer', description: 'Status for sended chat' })
+  @Column({
+    type: 'enum',
+    enum: SendedStatus,
+  })
+  sendedFor: string;
 }

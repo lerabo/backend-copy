@@ -14,13 +14,13 @@ export class OfferPostService {
     private offerRepository: Repository<OfferEntity>,
   ) {}
 
-  async getJobOfferByProfile(id: number, freelancerId: number, clientId: number): Promise<OfferEntity[]> {
+  async getJobOfferByProfile(id: number, freelancerId: number, clientId: number): Promise<OfferEntity> {
     const profile = await this.offerRepository
       .createQueryBuilder('getOffer')
       .where('getOffer.jobPostId = :jobId', { jobId: id })
       .andHaving('getOffer.clientId = :clientId', { clientId: clientId })
       .andHaving('getOffer.freelancerId = :id', { id: freelancerId })
-      .getMany();
+      .getOne();
     if (profile) {
       return profile;
     }

@@ -8,15 +8,18 @@ export class ChatRoomDto {
   @ApiProperty({ example: 'accepted', description: 'Status of active room or not' })
   activeRoom: string;
 
+  @ApiProperty({ example: 'forFreelancer', description: 'To whom send message' })
+  sendedFor: string;
+
   @ApiProperty({ example: 1, description: 'Job post id' })
   @IsNumber()
   jobPostId: number;
 
-  @ApiProperty({ example: 1, description: 'Id of sender' })
+  @ApiProperty({ example: 1, description: 'Id of client' })
   @IsNumber()
-  senderId: number;
+  clientId: number;
 
-  @ApiProperty({ example: 1, description: 'Id of recipient' })
+  @ApiProperty({ example: 1, description: 'Id of freelancer' })
   @IsNumber()
-  receiverId: number;
+  freelancerId: number;
 }

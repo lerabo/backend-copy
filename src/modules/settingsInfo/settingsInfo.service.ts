@@ -25,9 +25,28 @@ export class SettingsInfoService {
     currentUserSettings.firstName = settingsInfoDto.firstName;
     currentUserSettings.lastName = settingsInfoDto.lastName;
     currentUserSettings.phone = settingsInfoDto.phone;
+    currentUserSettings.userId = settingsInfoDto.userId;
     const profile = await this.userRepository.save(currentUserSettings);
     console.log(profile);
     return profile;
+  }
+
+  async getInfoByUser(userId: number) {
+    const clientInfoByUser = await this.userRepository
+      .createQueryBuilder('userInfo')
+      .where('userInfo.userId = :userId', { userId })
+      .getOne();
+
+    if (!clientInfoByUser) {
+      throw new HttpException(
+        {
+          status: HttpStatus.BAD_REQUEST,
+          error: 'user info not found',
+        },
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return clientInfoByUser;
   }
 
   async getAllSettings(): Promise<User[]> {

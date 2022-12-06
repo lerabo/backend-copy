@@ -19,6 +19,4 @@ export class SettingsInfoDto {
   @ApiProperty({ example: 1, description: 'User id for profile' })
   userId: number;
 
-  @ApiProperty({ example: 1, description: 'User for profile' })
-  user: number;
 }

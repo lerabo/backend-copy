@@ -44,12 +44,12 @@ export class ChatRoomController {
 
   @ApiOperation({ summary: 'Get chat room by jobPost Id' })
   @ApiResponse({ status: 200, type: ChatRoom })
-  @Get(':senderId/:receiverId/:jobPostId')
+  @Get(':clientId/:freelancerId/:jobPostId')
   getChatRoomsByTwoUserId(
-    @Param('senderId') senderId: number,
-    @Param('receiverId') receiverId: number,
+    @Param('clientId') clientId: number,
+    @Param('freelancerId') freelancerId: number,
     @Param('jobPostId') jobPostId: number,
   ) {
-    return this.chatRoomService.getChatRoomsByTwoUserId(Number(senderId), Number(receiverId), Number(jobPostId));
+    return this.chatRoomService.getChatRoomsByTwoUserId(Number(clientId), Number(freelancerId), Number(jobPostId));
   }
 }

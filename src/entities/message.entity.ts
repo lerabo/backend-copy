@@ -17,7 +17,7 @@ export class Message {
 
   @ApiProperty({ type: User })
   @ManyToOne(() => User)
-  @JoinColumn({ name: 'senderId' })
+  @JoinColumn({ name: 'clientId' })
   user: User;
 
   @ApiProperty({ type: ChatRoom })

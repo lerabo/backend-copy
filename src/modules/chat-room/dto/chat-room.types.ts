@@ -9,3 +9,9 @@ export enum RoomStatus {
   ACCEPTED = 'accepted',
   DECLINED = 'declined',
 }
+
+export enum SendedStatus {
+  FREELANCER = 'forFreelancer',
+  CLIENT = 'forClient',
+}
+

@@ -22,6 +22,13 @@ export class SettingsInfoController {
 
   @ApiOperation({ summary: 'Get contact info' })
   @ApiResponse({ status: 200, type: [User] })
+  @Get(':id')
+  getInfoByUser( @Param('id') id: number): Promise<User> {
+    return this.settingsInfoService.getInfoByUser(Number(id));
+  }
+
+  @ApiOperation({ summary: 'Get contact info' })
+  @ApiResponse({ status: 200, type: [User] })
   @Get('setting')
   getAllSettings(): Promise<User[]> {
     return this.settingsInfoService.getAllSettings();
